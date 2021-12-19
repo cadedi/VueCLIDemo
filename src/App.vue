@@ -17,10 +17,17 @@
     <!-- 组件绑定原生事件必须使用native修饰符,原生事件会在组件模版的根元素上触发 -->
     <!-- <Student @click.native="window.alert(1)" name="John" :age="18"/> -->
 
-
-
     <hr/>
     <Count/>
+
+    <hr/>
+    <!-- 指定路由的路径和激活状态添加的样式(该标签编译后为a标签) -->
+    <router-link active-class="active" to="/about">About</router-link>
+    <router-link active-class="active" to="/home">Home</router-link>
+    <h2>路由切换时以下发生组件切换</h2>
+    <!-- 指定路由切换组件的呈现位置 -->
+    <router-view></router-view>
+
   </div>
 </template>
 <script>
@@ -68,4 +75,7 @@
 </script>
 
 <style>
+  .active{
+    background-color: antiquewhite;
+  }
 </style>

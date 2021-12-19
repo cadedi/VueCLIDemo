@@ -10,76 +10,116 @@ import Detail2 from '../pages/Detail2'
 import NewsDetail from '../pages/NewsDetail'
 
 // 创建并暴露一个路由器(在其中设置路由规则)
-export default new VueRouter({
-  routes:[
+const router = new VueRouter({
+  // hash模式,前端路由的路径在地址栏前缀#/,刷新(重新加载)时该路径不会发送给后端
+  // 若开启history则无#,但刷新(重新加载)时当前路径会发送给后端,后端需设法处理前端路由
+  // 注意,若用户仅仅在单页应用上单击操作,没有手动刷新,则两种模式都能正常工作(路由仅仅只是更改了地址栏的地址而没有发生跳转)
+  mode:'hash',  
+  routes: [
     {
-      path:'/home', //域名之后的第一个路径需加斜杠
-      component:Home,
-      children:[  //多级路由
+      name: 'zhuye',
+      path: '/home', //域名之后的第一个路径需加斜杠
+      component: Home,
+      children: [  //多级路由
         {
-					path:'news',  //不加斜杠
-					component:News,
-          children:[
-            // 编程式导航示例
+          name: 'xinwen',
+          path: 'news',  //不加斜杠
+          component: News,
+          children: [
             {
-              name:'newsDeatil',
-              path:'newsDeatil',
-              component: NewsDetail,  
-              props($route){
+              name: 'newsDeatil',
+              path: 'newsDeatil',
+              component: NewsDetail,
+              props($route) {
                 return {
-                  id:$route.query.id,
-                  title:$route.query.title,
+                  id: $route.query.id,
+                  title: $route.query.title,
                 }
               }
             }
-          ]
-				},
-				{
-					path:'message',
-					component:Message,
-          children:[
-            {             
-              path:'detail1',  //Message的子路由,Message对其动态传**query参数**
-              name:'Msgsdeatil1',  //使用可选的name参数配置命名路由,可简化to属性(必须是:对象形式)的路径写法
+          ],
+          // meta允许程序员存放任意自定义信息
+          meta: { isAuth: true, title: '新闻' },
+
+          // 2.独享路由守卫,用法与全局前置路由守卫相同(仅有前置守卫)
+          beforeEnter: (to, from, next) => {
+            console.log('独享路由守卫', to, from)
+            if (to.meta.isAuth) { //判断是否需要鉴权
+              if (localStorage.getItem('name')) {
+                next()
+              }else {
+                alert('暂无权限')
+              }
+            } else {
+              next()
+            }
+          }
+        },
+        {
+          name: 'xiaoxi',
+          path: 'message',
+          component: Message,
+          children: [
+            {
+              path: 'detail1',
+              name: 'Msgsdeatil1',
               component: Detail1,
             },
             {
-              path:'detail2/:id/:title', //路径中params参数的写法
-              name:'Msgsdeatil2', //:对象配置to属性时,必须使用name配置跳转路径而不能使用path
+              path: 'detail2/:id/:title',
+              name: 'Msgsdeatil2',
               component: Detail2,
-
-              //配置props参数,可简化组件获取参数,使其使用组件props的方式获取参数,不必再显式访问$route
-          
-
-              //props的第一种写法，通用,值为对象，该对象中的所有key-value都会以props的形式传给Detail组件(不动态,较少使用)
-							// props:{a:1,b:'hello'}
-
-							//props的第二种写法，只适用于param写法,值为布尔值，若布尔值为真，就会把该路由组件收到的所有params参数，以props的形式传给Detail组件(即route.params 将会被设置为组件属性)
-							// props:true
-
-							//props的第三种写法，通用,值为函数
-              props($route){
+              props($route) {
                 return {
-                  id:$route.query.id,
-                  title:$route.query.title,
-                  a:1,
-                  b:'hello'
+                  id: $route.query.id,
+                  title: $route.query.title,
+                  a: 1,
+                  b: 'hello'
                 }
               }
-              //解构赋值
-              // props({query:{id,title}}){
-              //   return {id,title}
-              // }
-
             }
-          ]
-				}
-      ]
+          ],
+          meta: { isAuth: true, title: '消息' }
+        }
+      ],
+      meta: { title: '主页' }
     },
     {
       path: '/about',
-      component:About
+      name: 'guanyu',
+      component: About,
+      meta: { title: '关于' }
     }
-    
+
   ]
 })
+
+//1.全局前置路由守卫————初始化的时候被调用、每次路由切换之前被调用
+//回调中to,from上存放着路由的name与path等信息,调用next放行
+/*
+router.beforeEach((to,from,next) => {
+  console.log('全局前置路由守卫',to,from)
+  // if(to.name === 'xinwen' || to.name === 'xiaoxi'){
+  if(to.meta.isAuth){ //判断是否需要鉴权
+    if(localStorage.getItem('name')){
+      next()
+    }else{
+      alert('暂无权限')
+    }
+  }else{
+    next()
+  }
+})
+*/
+
+//全局后置路由守卫————初始化的时候被调用、每次路由**切换之后**被调用(beforeEach放行就紧随其后运行,注意与组件内路由守卫beforeRouteLeave的区别)
+router.afterEach((to, from) => {
+  console.log('全局后置路由守卫', to, from)
+  // 路由切换时改变标题,为根路径(主页)也设置标题(如斯则最好将index.html(主页)的meta title也改成相同标题)
+  document.title = to.meta.title || '硅谷系统'
+})
+
+
+//3.组件内路由守卫,可控制路由进入或**离开组件**时是否放行,在组件中编写(见message组件)
+
+export default router
